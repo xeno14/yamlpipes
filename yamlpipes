@@ -45,6 +45,12 @@ def ParseConf(conf, workdir, test=False):
                 args = args + IncludeParam(include_path, prefix)
     if "args" in conf:
         args = args + ExpandArgs(conf["args"])
+    if "redir_in" in conf:
+        args = args + ["<", conf["redir_in"]]
+    if "redir_out" in conf:
+        args = args + [">", conf["redir_out"]]
+    if "redir_app" in conf:
+        args = args + [">>", conf["redir_app"]]
     return [exec_] + args
 
 
@@ -53,10 +59,14 @@ def PrependCd(confs, path):
 
 
 def Dump(commands):
-    print(" && ".join([" ".join(c) for c in commands]))
+    cstr = []
+    for c in commands:
+        cstr.append("{ " + " ".join(c) + " ;}")
+    print(" && ".join(cstr))
 
 
 def DumpPretty(commands):
+    # TODO pretty format
     print(" && \\\n\t".join([" ".join(cmd) for cmd in commands]))
 
 
@@ -75,6 +85,7 @@ def main(parse_args):
             DumpPretty(result)
         else:
             Dump(result)
+
 
 if __name__ == '__main__':
     from signal import signal, SIGPIPE, SIG_DFL
