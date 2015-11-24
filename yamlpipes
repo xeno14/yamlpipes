@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import os.path as op
+import sys
+import yaml
+
+
+def ExpandArgs(args):
+    res = []
+    for arg in args:
+        if type(arg) is dict:
+            for k, v in arg.items():
+                res = res + [str(k), str(v)]
+        else:
+            res.append(str(arg))
+    return res
+
+
+def IncludeParam(path, prefix=""):
+    with open(path) as f:
+        args = yaml.load(f)
+    res = []
+    for k, v in args.items():
+        res.append(prefix + str(k))
+        res.append(str(v))
+    return res
+
+
+def GetIfExists(d, key, default):
+    if key in d:
+        return d[key]
+    return default
+
+
+def ParseConf(conf, workdir, test=False):
+    exec_  = conf["exec"]
+    args = []
+    if not test and "include" in conf:
+        for include in conf["include"]:
+            prefix = GetIfExists(conf, "include_prefix", "")
+            include_path = op.join(workdir, include)
+            with open(include_path) as f:
+                args = args + IncludeParam(include_path, prefix)
+    if "args" in conf:
+        args = args + ExpandArgs(conf["args"])
+    return [exec_] + args
+
+
+def PrependCd(confs, path):
+    return [{"exec": "cd", "args": [ path ]}] + confs
+
+
+def Dump(commands):
+    print(" && ".join([" ".join(c) for c in commands]))
+
+
+def DumpPretty(commands):
+    print(" && \\\n\t".join([" ".join(cmd) for cmd in commands]))
+
+
+def main(parse_args):
+    with open(parse_args.process_file) as f:
+        process_conf = yaml.load(f)
+    if parse_args.test: 
+        lines = ["{TEST}"]
+    else:
+        lines = sys.stdin.readlines()
+    for line in lines:
+        rundir = line.strip()
+        confs = PrependCd(process_conf, rundir)
+        result = [ParseConf(conf, rundir, test=parse_args.test) for conf in confs]
+        if parse_args.pretty:
+            DumpPretty(result)
+        else:
+            Dump(result)
+
+if __name__ == '__main__':
+    from signal import signal, SIGPIPE, SIG_DFL
+    signal(SIGPIPE,SIG_DFL) 
+    parser = argparse.ArgumentParser(description="Command generator")
+    parser.add_argument("process_file",
+                        type=str,
+                        help="process configuration file")
+    parser.add_argument("--test",
+                        action="store_true",
+                        default=False,
+                        help="dump generated command from process_file for test")
+    parser.add_argument("--pretty",
+                        action="store_true",
+                        default=False,
+                        help="dump message in pretty format")
+    main(parser.parse_args())
