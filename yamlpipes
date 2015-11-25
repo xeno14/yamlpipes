@@ -46,11 +46,11 @@ def ParseConf(conf, workdir, test=False):
     if "args" in conf:
         args = args + ExpandArgs(conf["args"])
     if "redir_in" in conf:
-        args = args + ["<", conf["redir_in"]]
+        args = args + ["<"+conf["redir_in"]]
     if "redir_out" in conf:
-        args = args + [">", conf["redir_out"]]
+        args = args + [">"+conf["redir_out"]]
     if "redir_app" in conf:
-        args = args + [">>", conf["redir_app"]]
+        args = args + [">>"+conf["redir_app"]]
     return [exec_] + args
 
 
