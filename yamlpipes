@@ -53,6 +53,8 @@ def ParseConf(conf, workdir, test=False):
         args = args + [">>"+conf["redir_app"]]
     return [exec_] + args
 
+def PrependSetWorkdir(confs, path):
+    return [{"exec": "WORKDIR=$(pwd)/%s" % path}] + confs
 
 def PrependCd(confs, path):
     return [{"exec": "cd", "args": [ path ]}] + confs
@@ -79,7 +81,7 @@ def main(parse_args):
         lines = sys.stdin.readlines()
     for line in lines:
         rundir = line.strip()
-        confs = PrependCd(process_conf, rundir)
+        confs = PrependSetWorkdir([], rundir) + PrependCd([], rundir) + process_conf
         result = [ParseConf(conf, rundir, test=parse_args.test) for conf in confs]
         if parse_args.pretty:
             DumpPretty(result)
