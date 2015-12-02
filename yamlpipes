@@ -7,12 +7,23 @@ import sys
 import yaml
 
 
+def DictToArgs(args, prefix=""):
+    res = []
+    for k, v in args.items():
+        if type(v) is bool:
+            if v is True: res.append(prefix + str(k))
+        else:
+            res.append(prefix + str(k))
+            res.append(str(v))
+    return res
+
+
+
 def ExpandArgs(args):
     res = []
     for arg in args:
         if type(arg) is dict:
-            for k, v in arg.items():
-                res = res + [str(k), str(v)]
+            res = res + DictToArgs(arg)
         else:
             res.append(str(arg))
     return res
@@ -21,11 +32,7 @@ def ExpandArgs(args):
 def IncludeParam(path, prefix=""):
     with open(path) as f:
         args = yaml.load(f)
-    res = []
-    for k, v in args.items():
-        res.append(prefix + str(k))
-        res.append(str(v))
-    return res
+    return DictToArgs(args, prefix)
 
 
 def GetIfExists(d, key, default):
